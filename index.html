@@ -29,6 +29,7 @@
   --soil: #b98656;
   --shirt: #ef6b4f;
   --scrim: rgba(43, 33, 53, 0.32);
+  --row: rgba(43, 33, 53, 0.07);
   --bevel-hi: rgba(255, 255, 255, 0.6);
   --bevel-lo: rgba(43, 33, 53, 0.3);
   /* A square-cornered outline, the way old arcade lettering was drawn. */
@@ -69,6 +70,7 @@ body {
 /* HUD */
 #hud {
   position: absolute; top: 0; left: 0; right: 0;
+  z-index: 2;  /* above the overlays, so mute and Top 10 stay tappable */
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 14px 16px;
   pointer-events: none;
@@ -84,7 +86,7 @@ body {
 .score .unit { font-size: 12px; margin-left: 12px; }
 .hud-best { font-family: var(--font-display); font-size: 10px; color: var(--ink); }
 .hud-best .lbl { text-transform: uppercase; }
-.hud-btns { display: flex; gap: 10px; pointer-events: auto; }
+.hud-btns { display: flex; gap: 10px; margin-left: auto; pointer-events: auto; }
 .icon-btn {
   width: 44px; height: 44px; padding: 0;
   display: grid; place-items: center;
@@ -107,7 +109,7 @@ body {
   touch-action: manipulation;
 }
 .overlay.scrim { justify-content: center; background: var(--scrim); }
-#over { justify-content: center; background: var(--scrim); }
+#over { justify-content: center; background: var(--scrim); overflow-y: auto; }
 #over.below { justify-content: flex-start; background: none; }
 #over.side { align-items: flex-end; background: none; }
 #title { justify-content: space-between; padding-block: max(56px, 7vh) max(28px, 5vh); }
@@ -216,6 +218,64 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   padding: 7px 10px 6px;
   transform: rotate(-3deg);
 }
+/* Global leaderboard */
+.text-btn {
+  height: 44px; padding: 0 12px;
+  font-family: var(--font-display); font-size: 10px; text-transform: uppercase;
+  background: var(--paper); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 0;
+  box-shadow: inset -3px -3px 0 var(--bevel-lo), 3px 3px 0 var(--ink);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.text-btn:active { transform: translate(2px, 2px); box-shadow: inset 3px 3px 0 var(--bevel-lo), 1px 1px 0 var(--ink); }
+#over.entry { justify-content: flex-start; padding-top: 68px; }
+.name-form { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 0; }
+.hs-title {
+  margin: 0;
+  font-family: var(--font-display); font-size: 12px; text-transform: uppercase;
+  background: var(--bee);
+  border: 3px solid var(--ink);
+  padding: 7px 10px 6px;
+}
+.name-row { display: flex; gap: 8px; width: 100%; }
+#nameInput {
+  flex: 1; min-width: 0;
+  font-family: var(--font-display); font-size: 16px; text-transform: uppercase;
+  color: var(--ink); background: var(--paper);
+  border: 3px solid var(--ink); border-radius: 0;
+  padding: 10px 8px;
+  -webkit-user-select: text; user-select: text;
+}
+#nameInput:focus { outline: 3px solid var(--bee); outline-offset: 0; }
+#nameInput::placeholder { color: var(--ink-soft); opacity: 0.6; }
+.small-btn {
+  font-family: var(--font-display); font-size: 12px; text-transform: uppercase;
+  color: var(--ink); background: var(--bee);
+  border: 3px solid var(--ink); border-radius: 0;
+  box-shadow: inset 3px 3px 0 var(--bevel-hi), inset -3px -3px 0 var(--bevel-lo), 3px 3px 0 var(--ink);
+  padding: 0 12px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.small-btn:active { transform: translate(2px, 2px); box-shadow: inset 3px 3px 0 var(--bevel-lo), 1px 1px 0 var(--ink); }
+.small-btn:disabled { opacity: 0.55; }
+.form-msg { margin: 0; font-size: 17px; line-height: 1.2; color: var(--danger); }
+.board-msg { margin: 0; font-size: 18px; line-height: 1.2; color: var(--ink-soft); }
+.form-msg:empty, .board-msg:empty { display: none; }
+#scores { background: var(--scrim); overflow-y: auto; }
+#scores .card { margin-block: auto; }
+.board { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; }
+.board li {
+  display: grid; grid-template-columns: 3ch minmax(0, 1fr) auto; gap: 10px; align-items: baseline;
+  padding: 7px 8px;
+  font-family: var(--font-display); font-size: 11px; line-height: 1.2;
+}
+.board li:nth-child(odd) { background: var(--row); }
+.board li.you { background: var(--bee); }
+.board .rank { text-align: right; }
+.board .who { text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board .time { text-align: right; }
 @media (min-width: 640px) {
   h1 .line { font-size: 48px; }
 }
@@ -228,6 +288,8 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   h1 { gap: 8px; }
   h1 .line { font-size: 24px; }
   .tag { font-size: 10px; line-height: 1.8; padding: 10px 12px 6px; }
+  #over.entry { padding-top: 12px; align-items: flex-start; }
+  .board li { padding: 3px 8px; font-size: 10px; }
 }
 </style>
 
@@ -240,6 +302,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
       <div class="hud-best"><span class="lbl">Best</span> <span id="hudBest">0.0</span>s</div>
     </div>
     <div class="hud-btns">
+      <button class="text-btn" id="boardBtn" type="button" hidden>Top 10</button>
       <button class="icon-btn" id="pauseBtn" type="button" aria-label="Pause" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1.5" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.5" fill="currentColor"/></svg>
       </button>
@@ -272,6 +335,15 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
       <h2>Soaked!</h2>
       <p class="result">You stayed dry for<br><b id="finalTime">0.0</b> seconds</p>
       <span class="badge" id="newBest" hidden>New best!</span>
+      <form class="name-form" id="nameForm" hidden>
+        <p class="hs-title">New high score!</p>
+        <label class="fine" for="nameInput">Enter your name for the Top 10</label>
+        <div class="name-row">
+          <input id="nameInput" name="name" maxlength="10" placeholder="Your name" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="done" required>
+          <button class="small-btn" id="saveBtn" type="submit">Save</button>
+        </div>
+        <p class="form-msg" id="nameMsg" role="status"></p>
+      </form>
       <button id="againBtn" class="big" type="button">Try again</button>
       <p class="fine">Best: <span id="overBest">0.0</span>s dry</p>
     </div>
@@ -281,6 +353,15 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     <div class="card">
       <h2 class="paused">Paused</h2>
       <button id="resumeBtn" class="big" type="button">Keep running</button>
+    </div>
+  </div>
+
+  <div id="scores" class="overlay" hidden>
+    <div class="card">
+      <h2>Top 10</h2>
+      <ol class="board" id="boardList"></ol>
+      <p class="board-msg" id="boardMsg" role="status"></p>
+      <button id="boardAction" class="big" type="button">Close</button>
     </div>
   </div>
 </div>
@@ -543,7 +624,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   let state = 'title';           // title | running | paused | popping | over
   let time = 0, runT = 0, speed = 200, scroll = 0, nextIn = 0, shake = 0, hintT = 0;
   let gap = 0.85, gapDisp = 0.85, popT = 0, popped = false, popAt = null, dripT = 0;
-  let restartReadyAt = 0, runs = 0, prevBest = 0, lastPattern = '', patternStreak = 0, lastHud = '';
+  let restartReadyAt = 0, runs = 0, prevBest = 0, lastPattern = '', patternStreak = 0, lastHud = '', lastScore = 0;
   let best = parseFloat(store.get('bopvpob.best', '0')) || 0;
 
   const obstacles = [], particles = [], popups = [];
@@ -609,6 +690,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
 
   const JUMP_KEYS = ['Space', 'ArrowUp', 'KeyW'], DUCK_KEYS = ['ArrowDown', 'KeyS'];
   window.addEventListener('keydown', (e) => {
+    if (e.target instanceof HTMLInputElement) return;  // typing a name
     const k = e.code;
     if (state === 'running') {
       if (JUMP_KEYS.includes(k)) { e.preventDefault(); if (!e.repeat) press('jump'); }
@@ -622,6 +704,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     } else if (k === 'KeyP' && state === 'paused') resume();
   });
   window.addEventListener('keyup', (e) => {
+    if (e.target instanceof HTMLInputElement) return;
     if (JUMP_KEYS.includes(e.code)) unpress('jump');
     else if (DUCK_KEYS.includes(e.code)) unpress('duck');
   });
@@ -665,6 +748,94 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     } catch (e) { wakeLock = null; }
   }
 
+  // ---------- global leaderboard ----------
+  // Scores live on a small Cloudflare service (see leaderboard/). Offline, or inside the Claude
+  // viewer (which blocks outside requests), the fetch fails and the game runs without it.
+  const BOARD_URL = 'https://bopvpob-leaderboard.bopvpob-leaderboard.workers.dev/scores';
+  const NAME_OK = /^[A-Z0-9 .!?'_-]{1,10}$/;
+  const Board = {
+    enabled: false, top: [], mine: null,
+    async refresh() {
+      try {
+        const res = await fetch(BOARD_URL, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (Array.isArray(data.top)) { this.top = data.top; this.enabled = true; }
+      } catch (e) { /* no leaderboard this time */ }
+      $('boardBtn').hidden = !this.enabled || !(state === 'title' || state === 'over');
+      if (!$('scores').hidden) renderBoard();
+    },
+    qualifies(score) {
+      if (!this.enabled || score <= 0) return false;
+      return this.top.length < 10 || score > this.top[this.top.length - 1].score;
+    },
+    async submit(name, score) {
+      const res = await fetch(BOARD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Couldn't save your score. Try again.");
+      if (Array.isArray(data.top)) this.top = data.top;
+      this.mine = data.id;
+    },
+  };
+
+  function renderBoard() {
+    const list = $('boardList');
+    list.textContent = '';
+    for (const row of Board.top) {
+      const li = document.createElement('li');
+      if (row.id === Board.mine) li.className = 'you';
+      for (const [cls, text] of [['rank', row.rank + '.'], ['who', row.name], ['time', fmt(row.score) + 's']]) {
+        const span = document.createElement('span');
+        span.className = cls;
+        span.textContent = text;
+        li.append(span);
+      }
+      list.append(li);
+    }
+    $('boardMsg').textContent = !Board.enabled ? "Couldn't load the scores. Check your connection."
+      : Board.top.length ? '' : 'No scores yet. Be the first!';
+  }
+  // The Top 10 replaces whichever screen opened it, so nothing shows through behind it.
+  function openBoard() {
+    renderBoard();
+    $('boardAction').textContent = state === 'over' ? 'Try again' : 'Close';
+    $('title').hidden = true;
+    $('over').hidden = true;
+    $('scores').hidden = false;
+    Board.refresh();
+  }
+  $('boardBtn').addEventListener('click', () => openBoard());
+  $('boardAction').addEventListener('click', () => {
+    $('scores').hidden = true;
+    if (state === 'over') startRun();
+    else if (state === 'title') $('title').hidden = false;
+  });
+  $('nameForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = $('nameInput').value.replace(/\s+/g, ' ').trim().toUpperCase();
+    if (!NAME_OK.test(name)) {
+      $('nameMsg').textContent = 'Use up to 10 letters, numbers or spaces.';
+      return;
+    }
+    store.set('bopvpob.name', name);
+    $('saveBtn').disabled = true;
+    $('nameMsg').textContent = '';
+    try {
+      await Board.submit(name, lastScore);
+      $('nameInput').blur();
+      $('nameForm').hidden = true;
+      placeOverCard();
+      openBoard();
+    } catch (err) {
+      $('nameMsg').textContent = err.message;
+      $('saveBtn').disabled = false;
+    }
+  });
+
   // ---------- flow ----------
   function startRun() {
     if (state === 'running' || state === 'popping') return;
@@ -678,6 +849,8 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     runs++; prevBest = best; lastPattern = ''; patternStreak = 0; lastHud = '';
     state = 'running';
     $('title').hidden = true; $('over').hidden = true; $('pause').hidden = true;
+    $('scores').hidden = true; $('boardBtn').hidden = true; $('nameForm').hidden = true;
+    Board.refresh();  // fresh Top 10 for deciding whether this run makes the board
     $('hudLeft').hidden = false; $('pauseBtn').hidden = false;
     $('score').classList.remove('hot');
     syncBestLabels(); updateHud();
@@ -724,10 +897,13 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     vibrate([60, 40, 140]);
   }
   // Keep the soaked runner in view: card goes below the ground, else beside the runner, else centered.
+  // While a name is being typed, the card sits near the top so the phone keyboard can't cover it.
   function placeOverCard() {
     const over = $('over'), card = over.querySelector('.card');
-    const below = card.offsetHeight + 16 <= H - groundScreenY - 12;
-    const side = !below && W >= 640;
+    const entry = !$('nameForm').hidden;
+    over.classList.toggle('entry', entry);
+    const below = !entry && card.offsetHeight + 16 <= H - groundScreenY - 12;
+    const side = !entry && !below && W >= 640;
     over.classList.toggle('below', below);
     over.classList.toggle('side', side);
     over.style.paddingTop = below ? Math.round(groundScreenY + 12) + 'px' : '';
@@ -739,8 +915,17 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     if (isBest) { best = score; store.set('bopvpob.best', best.toFixed(1)); }
     $('finalTime').textContent = score.toFixed(1);
     $('newBest').hidden = !(isBest && prevBest > 0);
+    lastScore = score;
+    const makesBoard = Board.qualifies(score);
+    $('nameForm').hidden = !makesBoard;
+    if (makesBoard) {
+      $('nameInput').value = store.get('bopvpob.name', '');
+      $('nameMsg').textContent = '';
+      $('saveBtn').disabled = false;
+    }
     syncBestLabels();
     $('hudLeft').hidden = true; $('pauseBtn').hidden = true;
+    $('boardBtn').hidden = !Board.enabled;
     $('over').hidden = false;
     placeOverCard();
     const btn = $('againBtn');
@@ -1545,6 +1730,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     try {
       if (document.fonts) for (const f of [FONT, BODY_FONT]) document.fonts.load(`16px ${f}`).catch(() => {});
     } catch (e) { /* ignore */ }
+    Board.refresh();
     lastFrame = performance.now();
     requestAnimationFrame(frame);
   }
