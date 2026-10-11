@@ -11,11 +11,13 @@
    Do instead: after edits, republish `index.html` with the Artifact tool. From a new session pass `url: https://claude.ai/artifact/GwfKEe87qFZYan4fSU2CUo` (read it first) so the link the user's wife has keeps working.
 2. **[2026-10-11] Two deploy targets: Claude artifact AND GitHub Pages**
    Do instead: after a change, commit + `git push` (repo `aingebritson/bopvpob`, branch `main`; Pages serves the root at https://aingebritson.github.io/bopvpob/ within ~1 min) and republish the artifact. Only commit/push when the user asks or has approved shipping the change.
-3. **[2026-10-11] `index.html` has no doctype/html/head/body (the Artifact skeleton wraps it)**
+3. **[2026-10-11] It's an installable home-screen app (manifest + icons)**
+   Do instead: if the look changes, redraw the icon with `tools/make_icon.py` (Pillow; use a scratchpad venv, it's not installed system-wide). Keep the head `<link rel="manifest">`/apple-touch-icon tags; home-screen name is "Pee vs Bees" in both the manifest and `apple-mobile-web-app-title`.
+4. **[2026-10-11] `index.html` has no doctype/html/head/body (the Artifact skeleton wraps it)**
    Do instead: for local playtesting, wrap it (`<!doctype html>…<body>` + file + `</body></html>`) into a scratchpad `test/index.html`, point `.claude/launch.json` "game-test" `--directory` at that folder, then `preview_start` "game-test". Rebuild the wrapper after every edit.
-4. **[2026-10-11] Syntax-check before testing**
+5. **[2026-10-11] Syntax-check before testing**
    Do instead: `sed -n '/<script>/,/<\/script>/p' index.html | sed '1d;$d' > game.js && node --check game.js`.
-5. **[2026-10-11] Test phone layouts in the browser pane**
+6. **[2026-10-11] Test phone layouts in the browser pane**
    Do instead: `resize_window` preset mobile (portrait) and 812x375 (landscape); drive input with dispatched `PointerEvent`s on `#c` (left half = duck, right half = jump); reset to desktop after.
 
 ## Domain Behavior Guardrails
