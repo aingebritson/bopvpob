@@ -457,6 +457,9 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   const STUMBLE = 0.6, INVULN = 1.1;
   const STEP = 1 / 120;
   const SKY_BANDS = 8;
+  // The whole background (clouds, hills, trees) scrolls together at this fraction of the ground's speed.
+  // One shared speed instead of separate parallax layers, which was making people dizzy.
+  const BACKDROP_SPEED = 0.18;
 
   const KINDS = {
     // box = [x0, x1, bottom, top]: x relative to obstacle.x, heights above the ground
@@ -1251,7 +1254,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     // clouds: stacked blocks
     const span = viewRight + 320;
     for (let i = 0; i < 6; i++) {
-      const drift = scroll * 0.05 * (0.6 + hash(i + 9) * 0.8) + time * 6;
+      const drift = scroll * BACKDROP_SPEED;
       const x = (((hash(i) * span - drift) % span) + span) % span - 160;
       const y = lerp(worldTop + 60, GROUND_Y - 175, hash(i + 3));
       const s = 0.7 + hash(i + 5) * 0.6;
@@ -1262,10 +1265,10 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
       ctx.fillStyle = S.cloudShade;
       ctx.fillRect(x, y + 3 * s, 76 * s, 5 * s);
     }
-    ridge(0.08, 90, 46, 56, 100, S.hillFar, S.hillFarDark);
-    ridge(0.18, 64, 20, 30, 200, S.hill, S.hillDark);
+    ridge(BACKDROP_SPEED, 90, 46, 56, 100, S.hillFar, S.hillFarDark);
+    ridge(BACKDROP_SPEED, 64, 20, 30, 200, S.hill, S.hillDark);
     // trees: pines and hexagon trees, shaded on the right half
-    const tp = scroll * 0.4, sp = 74;
+    const tp = scroll * BACKDROP_SPEED, sp = 74;
     const first = Math.floor((tp + L) / sp) - 1, last = Math.ceil((tp + R) / sp) + 1;
     for (let i = first; i <= last; i++) {
       if (hash(i) < 0.35) continue;
