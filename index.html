@@ -455,6 +455,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   const GRAVITY = 2600, FALL_MULT = 1.25, FAST_FALL = 7200;
   const JUMP_V = 900, JUMP_CUT = 0.5, MIN_JUMP = 0.09;
   const STUMBLE = 0.6, INVULN = 1.1;
+  const DUCK_LIMIT = 1.5;  // holding duck longer than this trips you (no crouch-running the whole game)
   const STEP = 1 / 120;
   const SKY_BANDS = 8;
   // The whole background (clouds, hills, trees) scrolls together at this fraction of the ground's speed.
@@ -669,7 +670,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   const obstacles = [], particles = [], popups = [];
   const player = {
     y: 0, vy: 0, jumping: false, cut: false, minJump: 0, buffer: 0, fastFall: false,
-    ducking: false, phase: 0, squash: 0, invuln: 0, stumble: 0, soak: 0,
+    ducking: false, phase: 0, squash: 0, invuln: 0, stumble: 0, soak: 0, duckHold: 0, duckBlocked: false,
   };
   const swarm = { cx: 40, cy: GROUND_Y - 58, spread: 1, bees: [] };
   for (let i = 0; i < 24; i++) {
@@ -683,7 +684,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   function resetPlayer() {
     Object.assign(player, {
       y: 0, vy: 0, jumping: false, cut: false, minJump: 0, buffer: 0, fastFall: false,
-      ducking: false, squash: 0, invuln: 0, stumble: 0, soak: 0,
+      ducking: false, squash: 0, invuln: 0, stumble: 0, soak: 0, duckHold: 0, duckBlocked: false,
     });
   }
 
@@ -1044,20 +1045,28 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     }
   }
 
-  function hitObstacle(o) {
-    o.hit = true;
+  function takeHit(text) {
     gap -= runMode.hitCost;
     player.invuln = INVULN;
     player.stumble = STUMBLE;
     shake = 0.25;
     Sound.hit();
     vibrate(35);
+    popup(text, PLAYER_X + 12, GROUND_Y - player.y - 84);
+  }
+  function hitObstacle(o) {
+    o.hit = true;
     if (o.air) {
       o.knocked = true; o.kvx = 180; o.kvy = -360;
-      popup(pick(['BZZT!', 'OUCH!']), PLAYER_X + 12, GROUND_Y - player.y - 84);
+      takeHit(pick(['BZZT!', 'OUCH!']));
     } else {
-      popup(pick(['OOF!', 'TRIP!', 'WHOA!']), PLAYER_X + 12, GROUND_Y - player.y - 84);
+      takeHit(pick(['OOF!', 'TRIP!', 'WHOA!']));
     }
+  }
+  // Held duck too long: trip, then stay standing until the duck control is let go.
+  function duckTrip() {
+    player.duckBlocked = true;
+    if (player.invuln <= 0) takeHit('TRIP!');
   }
 
   function update(dt) {
@@ -1069,6 +1078,12 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
       runT += dt;
       if (p.stumble > 0) p.stumble = Math.max(0, p.stumble - dt);
       if (p.invuln > 0) p.invuln = Math.max(0, p.invuln - dt);
+      if (input.duck) {
+        p.duckHold += dt;
+        if (p.duckHold >= DUCK_LIMIT && !p.duckBlocked) duckTrip();
+      } else {
+        p.duckHold = 0; p.duckBlocked = false;
+      }
       speed = speedAt(runT) * (1 - 0.35 * (p.stumble / STUMBLE));
       nextIn -= dt;
       if (nextIn <= 0) spawnPattern();
@@ -1119,7 +1134,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
         p.y = 0; p.vy = 0; p.jumping = false; p.fastFall = false;
       }
     }
-    p.ducking = state === 'running' && p.y <= 0 && !p.jumping && input.duck;
+    p.ducking = state === 'running' && p.y <= 0 && !p.jumping && input.duck && !p.duckBlocked;
     if (p.squash > 0) p.squash = Math.max(0, p.squash - dt * 5);
 
     const moving = state === 'running' || state === 'title' || (state === 'popping' && !popped);
@@ -1549,6 +1564,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     if (p.squash > 0) ctx.scale(1 + 0.12 * p.squash, 1 - 0.12 * p.squash);
 
     if (p.ducking) {
+      if (p.duckHold > DUCK_LIMIT - 0.5) ctx.translate(Math.floor(time * 20) % 2 ? 1.5 : -1.5, 0);
       const w = frame & 1 ? 0.1 : -0.1;
       leg(-4, -11, 1.0 + w, 2.09, S.pantsBack);
       leg(-4, -11, 1.15 - w, 2.09, S.pants);

@@ -11,7 +11,7 @@ A phone-friendly endless runner based on a dream. A platoon of helmeted bees is 
 | Phone | Keyboard | Action |
 |---|---|---|
 | Tap the right half | ↑ or Space | Jump (hold for a higher jump) |
-| Hold the left half | ↓ | Duck (tap while in the air to drop fast) |
+| Hold the left half | ↓ | Duck (tap while in the air to drop fast). Hold it longer than 1.5 seconds and you trip. |
 
 ## Juni mode
 
