@@ -1,3 +1,6 @@
 .DS_Store
 # Machine-specific preview config (points at a temporary folder)
 .claude/launch.json
+# Leaderboard tooling
+leaderboard/node_modules/
+leaderboard/.wrangler/

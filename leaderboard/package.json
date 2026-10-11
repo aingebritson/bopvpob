@@ -1,0 +1,12 @@
+{
+  "name": "bopvpob-leaderboard",
+  "private": true,
+  "description": "Global leaderboard API for Balloon of Pee vs. Platoon of Bees (Cloudflare Worker + D1).",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "scores": "wrangler d1 execute bopvpob-leaderboard --remote --command \"SELECT id, name, score_tenths / 10.0 AS seconds, created_at FROM scores ORDER BY score_tenths DESC LIMIT 50\""
+  },
+  "devDependencies": {
+    "wrangler": "^4.149.0"
+  }
+}

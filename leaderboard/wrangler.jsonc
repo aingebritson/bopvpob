@@ -1,0 +1,14 @@
+{
+  // Cloudflare Worker that serves and saves the global Top 10.
+  "name": "bopvpob-leaderboard",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bopvpob-leaderboard",
+      "database_id": "56988446-0a3b-432a-bd7b-73adec1ae1b2"
+    }
+  ]
+}
