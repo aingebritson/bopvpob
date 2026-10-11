@@ -13,6 +13,17 @@ A phone-friendly endless runner based on a dream. A platoon of helmeted bees is 
 | Tap the right half | ↑ or Space | Jump (hold for a higher jump) |
 | Hold the left half | ↓ | Duck (tap while in the air to drop fast) |
 
+## Juni mode
+
+An easier mode for little kids. Turn on **JUNI MODE** in the top-left corner of the title screen (the phone remembers it). In Juni mode:
+
+- Tap **anywhere** to jump. There's no ducking, so no queen bees or beehives.
+- It starts slower, speeds up more gently, and leaves more room between obstacles. Even a quick tap gives a big jump.
+- Bumps cost less, and the bees fall back faster.
+- Juni mode keeps its own best score and never goes on the global Top 10.
+
+Use **MENU** on the game-over screen to get back to the title screen and switch modes.
+
 ## Put it on your phone
 
 It installs like an app, with its own icon, and opens full screen.

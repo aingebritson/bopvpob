@@ -21,15 +21,17 @@
    Do instead: `resize_window` preset mobile (portrait) and 812x375 (landscape); drive input with dispatched `PointerEvent`s on `#c` (left half = duck, right half = jump); reset to desktop after.
 
 ## Domain Behavior Guardrails
-1. **[2026-10-11] Global leaderboard lives in `leaderboard/` (Cloudflare Worker + D1)**
+1. **[2026-10-11] Game rules are per-mode in `MODES` (normal / juni); `runMode` is locked at run start**
+   Do instead: tune difficulty, patterns, buffer, minJump via `MODES.*`, never hard-code. Juni mode is jump-only, no Top 10 (`noBoard`), separate best (`bopvpob.best.juni`); keep it that way.
+2. **[2026-10-11] Global leaderboard lives in `leaderboard/` (Cloudflare Worker + D1)**
    Do instead: `cd leaderboard && npx wrangler ...` (deploy: `npm run deploy`; list: `npm run scores`). CORS allows only aingebritson.github.io + localhost:8765, so local tests must serve on port 8765. Delete any TEST rows you post (`DELETE FROM scores WHERE name = 'TEST'`). Server rate limit: one post per IP per 10s.
-2. **[2026-10-11] Hives must be ducked; queens may be jumped or ducked**
+3. **[2026-10-11] Hives must be ducked; queens may be jumped or ducked**
    Do instead: keep the hive hitbox top open-ended (`box[3] = 9999`, the drawn rope is part of the obstacle). Don't give queens the same treatment.
-3. **[2026-10-11] Browser pane hidden = requestAnimationFrame paused, game clock frozen**
+4. **[2026-10-11] Browser pane hidden = requestAnimationFrame paused, game clock frozen**
    Do instead: for logic tests, use a test-only copy that exposes `window.__dbg = { obstacles, player, step, render }` (insert just before `function resetPlayer()`, after `player` exists) and step `update(STEP)` directly from an in-page script; the javascript tool can't see page globals.
-4. **[2026-10-11] Canvas: `restore()` after `clip()` does not restore the path**
+5. **[2026-10-11] Canvas: `restore()` after `clip()` does not restore the path**
    Do instead: rebuild the shape's path (`beginPath` + shape) before stroking an outline after any clipped fill.
-5. **[2026-10-11] Portrait phones need the closer camera**
+6. **[2026-10-11] Portrait phones need the closer camera**
    Do instead: keep `VIEW_W_PORTRAIT` (480) vs `VIEW_W` (600); if sprites/speeds change, re-check reaction time = (viewRight - PLAYER_X) / speedAt(t).
 
 ## User Directives

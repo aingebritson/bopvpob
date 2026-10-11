@@ -112,7 +112,7 @@ body {
 #over { justify-content: center; background: var(--scrim); overflow-y: auto; }
 #over.below { justify-content: flex-start; background: none; }
 #over.side { align-items: flex-end; background: none; }
-#title { justify-content: space-between; padding-block: max(56px, 7vh) max(28px, 5vh); }
+#title { justify-content: space-between; padding-block: max(70px, 8vh) max(28px, 5vh); }
 .stack { display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 100%; }
 
 h1 {
@@ -229,6 +229,17 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   touch-action: manipulation;
 }
 .text-btn:active { transform: translate(2px, 2px); box-shadow: inset 3px 3px 0 var(--bevel-lo), 1px 1px 0 var(--ink); }
+.text-btn:disabled { opacity: 0.55; }
+/* Juni mode switch: a pixel checkbox that turns bee-yellow when on */
+.juni-btn { display: inline-flex; align-items: center; gap: 8px; pointer-events: auto; }
+.juni-btn::before {
+  content: "";
+  width: 12px; height: 12px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+}
+.juni-btn[aria-pressed="true"] { background: var(--bee); }
+.juni-btn[aria-pressed="true"]::before { background: var(--ink); box-shadow: inset 0 0 0 2px var(--bee); }
 #over.entry { justify-content: flex-start; padding-top: 68px; }
 .name-form { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 0; }
 .hs-title {
@@ -301,6 +312,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
       <div class="score" id="score"><span id="t">0.0</span><span class="unit">s dry</span></div>
       <div class="hud-best"><span class="lbl">Best</span> <span id="hudBest">0.0</span>s</div>
     </div>
+    <button class="text-btn juni-btn" id="juniBtn" type="button" aria-pressed="false">Juni mode</button>
     <div class="hud-btns">
       <button class="text-btn" id="boardBtn" type="button" hidden>Top 10</button>
       <button class="icon-btn" id="pauseBtn" type="button" aria-label="Pause" hidden>
@@ -322,8 +334,9 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
       <p class="tag">You're holding a balloon full of pee. Don't let the bees pop it.</p>
       <button id="startBtn" class="big" type="button">Run!</button>
       <div class="controls">
-        <span class="chip"><b>Left half</b> hold to duck</span>
-        <span class="chip"><b>Right half</b> tap to jump</span>
+        <span class="chip" data-mode="normal"><b>Left half</b> hold to duck</span>
+        <span class="chip" data-mode="normal"><b>Right half</b> tap to jump</span>
+        <span class="chip" data-mode="juni" hidden><b>Tap anywhere</b> to jump</span>
       </div>
       <p class="fine">Best: <span id="titleBest">no runs yet</span></p>
       <p class="fine" id="iosHint" hidden>No sound? Turn off your phone's silent mode.</p>
@@ -345,6 +358,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
         <p class="form-msg" id="nameMsg" role="status"></p>
       </form>
       <button id="againBtn" class="big" type="button">Try again</button>
+      <button id="menuBtn" class="text-btn" type="button">Menu</button>
       <p class="fine">Best: <span id="overBest">0.0</span>s dry</p>
     </div>
   </div>
@@ -439,9 +453,8 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   const GROUND_Y = 270;          // ground surface, measured down from the band top
   const PLAYER_X = 150;
   const GRAVITY = 2600, FALL_MULT = 1.25, FAST_FALL = 7200;
-  const JUMP_V = 900, JUMP_CUT = 0.5, MIN_JUMP = 0.09, BUFFER = 0.13;
+  const JUMP_V = 900, JUMP_CUT = 0.5, MIN_JUMP = 0.09;
   const STUMBLE = 0.6, INVULN = 1.1;
-  const START_GAP = 0.75, HIT_COST = 0.3;
   const STEP = 1 / 120;
   const SKY_BANDS = 8;
 
@@ -468,8 +481,28 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     { name: 'dirt-hive',  from: 75, w: 1,   parts: [['dirt', 0], ['hive', 0.6]] },
   ];
 
-  const speedAt = (t) => 300 + 420 * (1 - Math.exp(-t / 70)) + 2 * t;
-  const difficulty = () => Math.min(1, runT / 120);
+  // Juni mode: one control (tap anywhere to jump), only obstacles you jump, slower and more forgiving.
+  const JUNI_PATTERNS = [
+    { name: 'rock',    from: 0,  w: 3,   parts: [['rock', 0]] },
+    { name: 'dirt',    from: 0,  w: 2.5, parts: [['dirt', 0]] },
+    { name: 'hydrant', from: 12, w: 1.5, parts: [['hydrant', 0]] },
+  ];
+  // gapMin/gapRand/regen are [start, fully ramped]; rampSecs is how long the ramp takes.
+  const MODES = {
+    normal: {
+      startGap: 0.75, hitCost: 0.3, regen: [0.022, 0.01], buffer: 0.13, minJump: MIN_JUMP,
+      rampSecs: 120, gapMin: [1.25, 0.72], gapRand: [0.95, 0.4], patterns: PATTERNS,
+      speedAt: (t) => 300 + 420 * (1 - Math.exp(-t / 70)) + 2 * t,
+    },
+    juni: {
+      startGap: 0.85, hitCost: 0.25, regen: [0.03, 0.015], buffer: 0.25, minJump: 0.2,
+      rampSecs: 180, gapMin: [1.6, 1.0], gapRand: [1.0, 0.6], patterns: JUNI_PATTERNS,
+      speedAt: (t) => 240 + 200 * (1 - Math.exp(-t / 90)) + t,
+      jumpOnly: true, noBoard: true,
+    },
+  };
+  const speedAt = (t) => runMode.speedAt(t);
+  const difficulty = () => Math.min(1, runT / runMode.rampSecs);
 
   // ---------- canvas & view ----------
   const canvas = $('c');
@@ -625,7 +658,10 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   let time = 0, runT = 0, speed = 200, scroll = 0, nextIn = 0, shake = 0, hintT = 0;
   let gap = 0.85, gapDisp = 0.85, popT = 0, popped = false, popAt = null, dripT = 0;
   let restartReadyAt = 0, runs = 0, prevBest = 0, lastPattern = '', patternStreak = 0, lastHud = '', lastScore = 0;
-  let best = parseFloat(store.get('bopvpob.best', '0')) || 0;
+  let juni = store.get('bopvpob.juni', '0') === '1';  // Juni mode switch, remembered per device
+  let runMode = MODES.normal;                         // the mode the current/last run used
+  const bestKey = () => (juni ? 'bopvpob.best.juni' : 'bopvpob.best');
+  let best = parseFloat(store.get(bestKey(), '0')) || 0;
 
   const obstacles = [], particles = [], popups = [];
   const player = {
@@ -656,9 +692,9 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     if (act === 'jump') {
       if (input.jump) return;
       input.jump = true;
-      if (state === 'running') player.buffer = BUFFER;
+      if (state === 'running') player.buffer = runMode.buffer;
     } else {
-      if (input.duck) return;
+      if (input.duck || runMode.jumpOnly) return;
       input.duck = true;
       if (state === 'running' && (player.y > 0 || player.jumping)) player.fastFall = true;
     }
@@ -670,7 +706,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     e.preventDefault();
     if (state !== 'running') return;
     const r = canvas.getBoundingClientRect();
-    const act = (e.clientX - r.left) < r.width / 2 ? 'duck' : 'jump';
+    const act = runMode.jumpOnly || (e.clientX - r.left) >= r.width / 2 ? 'jump' : 'duck';
     pointers.set(e.pointerId, act);
     press(act);
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
@@ -762,11 +798,11 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
         const data = await res.json();
         if (Array.isArray(data.top)) { this.top = data.top; this.enabled = true; }
       } catch (e) { /* no leaderboard this time */ }
-      $('boardBtn').hidden = !this.enabled || !(state === 'title' || state === 'over');
+      $('boardBtn').hidden = !this.enabled || juni || !(state === 'title' || state === 'over');
       if (!$('scores').hidden) renderBoard();
     },
     qualifies(score) {
-      if (!this.enabled || score <= 0) return false;
+      if (!this.enabled || runMode.noBoard || score <= 0) return false;
       return this.top.length < 10 || score > this.top[this.top.length - 1].score;
     },
     async submit(name, score) {
@@ -843,13 +879,14 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     Sound.init();
     obstacles.length = 0; particles.length = 0; popups.length = 0;
     resetPlayer(); clearInput();
+    runMode = juni ? MODES.juni : MODES.normal;
     runT = 0; speed = speedAt(0); nextIn = 1.6;
-    gap = START_GAP; popT = 0; popped = false; popAt = null; dripT = 0;
+    gap = runMode.startGap; popT = 0; popped = false; popAt = null; dripT = 0;
     hintT = runs === 0 ? 7 : 3.5;
     runs++; prevBest = best; lastPattern = ''; patternStreak = 0; lastHud = '';
     state = 'running';
     $('title').hidden = true; $('over').hidden = true; $('pause').hidden = true;
-    $('scores').hidden = true; $('boardBtn').hidden = true; $('nameForm').hidden = true;
+    $('scores').hidden = true; $('boardBtn').hidden = true; $('nameForm').hidden = true; $('juniBtn').hidden = true;
     Board.refresh();  // fresh Top 10 for deciding whether this run makes the board
     $('hudLeft').hidden = false; $('pauseBtn').hidden = false;
     $('score').classList.remove('hot');
@@ -912,7 +949,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     state = 'over';
     const score = Math.floor(runT * 10) / 10;
     const isBest = score > best;
-    if (isBest) { best = score; store.set('bopvpob.best', best.toFixed(1)); }
+    if (isBest) { best = score; store.set(bestKey(), best.toFixed(1)); }
     $('finalTime').textContent = score.toFixed(1);
     $('newBest').hidden = !(isBest && prevBest > 0);
     lastScore = score;
@@ -925,14 +962,38 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     }
     syncBestLabels();
     $('hudLeft').hidden = true; $('pauseBtn').hidden = true;
-    $('boardBtn').hidden = !Board.enabled;
+    $('boardBtn').hidden = !Board.enabled || runMode.noBoard;
     $('over').hidden = false;
     placeOverCard();
-    const btn = $('againBtn');
-    btn.disabled = true;
+    const btns = [$('againBtn'), $('menuBtn')];
+    for (const b of btns) b.disabled = true;
     restartReadyAt = performance.now() + 650;
-    setTimeout(() => { btn.disabled = false; }, 650);
+    setTimeout(() => { for (const b of btns) b.disabled = false; }, 650);
   }
+  // Back to the title screen (where Juni mode can be switched), with a fresh, dry runner.
+  function goToTitle() {
+    if (state !== 'over' || performance.now() < restartReadyAt) return;
+    state = 'title';
+    obstacles.length = 0; particles.length = 0; popups.length = 0;
+    resetPlayer(); popped = false; popAt = null; popT = 0;
+    $('over').hidden = true; $('scores').hidden = true; $('nameForm').hidden = true;
+    $('title').hidden = false; $('juniBtn').hidden = false;
+    syncMode();
+  }
+  function syncMode() {
+    $('juniBtn').setAttribute('aria-pressed', juni ? 'true' : 'false');
+    for (const el of document.querySelectorAll('[data-mode]')) el.hidden = el.dataset.mode !== (juni ? 'juni' : 'normal');
+    best = parseFloat(store.get(bestKey(), '0')) || 0;
+    syncBestLabels();
+    $('boardBtn').hidden = juni || !Board.enabled || !(state === 'title' || state === 'over');
+  }
+  $('menuBtn').addEventListener('click', () => goToTitle());
+  $('juniBtn').addEventListener('click', () => {
+    if (state !== 'title') return;
+    juni = !juni;
+    store.set('bopvpob.juni', juni ? '1' : '0');
+    syncMode();
+  });
 
   // ---------- spawning ----------
   function makeObstacle(kind, x) {
@@ -943,7 +1004,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     };
   }
   function spawnPattern() {
-    let avail = PATTERNS.filter((p) => runT >= p.from);
+    let avail = runMode.patterns.filter((p) => runT >= p.from);
     if (patternStreak >= 2) avail = avail.filter((p) => p.name !== lastPattern);
     let total = 0;
     for (const p of avail) total += p.w;
@@ -958,7 +1019,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
       span = Math.max(span, dt);
     }
     const d = difficulty();
-    nextIn = span + lerp(1.25, 0.72, d) + Math.random() * lerp(0.95, 0.4, d);
+    nextIn = span + lerp(runMode.gapMin[0], runMode.gapMin[1], d) + Math.random() * lerp(runMode.gapRand[0], runMode.gapRand[1], d);
   }
 
   // ---------- update ----------
@@ -982,7 +1043,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
 
   function hitObstacle(o) {
     o.hit = true;
-    gap -= HIT_COST;
+    gap -= runMode.hitCost;
     player.invuln = INVULN;
     player.stumble = STUMBLE;
     shake = 0.25;
@@ -1009,7 +1070,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
       nextIn -= dt;
       if (nextIn <= 0) spawnPattern();
       if (hintT > 0) hintT -= dt;
-      if (p.stumble <= 0) gap = Math.min(1, gap + lerp(0.022, 0.01, difficulty()) * dt);
+      if (p.stumble <= 0) gap = Math.min(1, gap + lerp(runMode.regen[0], runMode.regen[1], difficulty()) * dt);
     } else if (state === 'title') {
       speed = 200;
       gap = 0.85;
@@ -1039,7 +1100,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     const grounded = p.y <= 0 && !p.jumping;
 
     if (state === 'running' && p.buffer > 0 && grounded) {
-      p.vy = JUMP_V; p.jumping = true; p.cut = false; p.minJump = MIN_JUMP;
+      p.vy = JUMP_V; p.jumping = true; p.cut = false; p.minJump = runMode.minJump;
       p.buffer = 0; p.fastFall = false; p.ducking = false;
       Sound.jump();
       dust(PLAYER_X, 4);
@@ -1630,6 +1691,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     if (state !== 'running' || hintT <= 0) return;
     if (hintT < 0.8 && Math.floor(hintT * 8) % 2) return;  // blink out
     const top = groundScreenY + 18, y = groundScreenY + Math.max(28, (H - groundScreenY) * 0.45);
+    if (runMode.jumpOnly) { hintChip(W / 2, y, 'TAP ANYWHERE', 'to jump'); return; }
     ctx.fillStyle = C.ink;
     for (let yy = top; yy < H - 12; yy += 14) ctx.fillRect(W / 2 - 1, yy, 2, 7);
     hintChip(W * 0.25, y, 'LEFT HALF', 'hold to duck');
@@ -1724,7 +1786,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     if (data && typeof data.best === 'number' && data.best > best) best = data.best;
     resize();
     syncMute();
-    syncBestLabels();
+    syncMode();
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     if (iOS) $('iosHint').hidden = false;
     try {
