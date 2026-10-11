@@ -208,7 +208,6 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
 .card h2.paused { color: var(--paper); font-size: 28px; }
 .result { margin: 0; font-size: 21px; line-height: 1.3; }
 .result b { display: inline-block; margin-top: 6px; font-family: var(--font-display); font-weight: 400; font-size: 24px; }
-.quip { margin: 0; font-size: 19px; line-height: 1.2; color: var(--ink-soft); max-width: 28ch; }
 .badge {
   font-family: var(--font-display); font-size: 11px;
   background: var(--bee); color: var(--ink);
@@ -281,7 +280,6 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   <div id="pause" class="overlay scrim" hidden>
     <div class="card">
       <h2 class="paused">Paused</h2>
-      <p class="quip">The bees are hovering. Patiently.</p>
       <button id="resumeBtn" class="big" type="button">Keep running</button>
     </div>
   </div>
@@ -328,7 +326,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     rock: '#a3a9b3', rockLight: '#c9ced6', rockDark: '#80868f',
     dirt: '#9a663b', dirtLight: '#bf8a58', dirtDark: '#73492a',
     hydrant: '#dd4b3e', hydrantDark: '#b13a30',
-    hive: '#eaa53c', hiveDark: '#d48d2c', hiveShade: '#ad6b1d',
+    hive: '#eaa53c', hiveDark: '#d48d2c', hiveShade: '#ad6b1d', rope: '#d9b47a', ropeDark: '#a7804a',
     helmet: '#5f6f3b', beeShade: '#d48f0c', wing: 'rgba(255,255,255,0.9)',
     queen: '#f2901f', queenShade: '#c96f10', crown: '#ffe14d', crownShade: '#e0b21f',
     skin: '#efbf98', hair: '#4a2f22', pants: '#3b4475', pantsBack: '#2c3359',
@@ -371,7 +369,7 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
     dirt:    { w: 58, box: [6, 52, 0, 33] },
     hydrant: { w: 28, box: [5, 23, 0, 45] },
     queen:   { w: 26, box: [3, 23, 46, 66], air: true },
-    hive:    { w: 34, box: [5, 29, 46, 80], air: true },
+    hive:    { w: 34, box: [5, 29, 46, 9999], air: true },  // open-ended top: the rope blocks jumping over
   };
   // parts = [kind, seconds after the first part]; from = seconds into the run before it can appear
   const PATTERNS = [
@@ -1185,7 +1183,12 @@ button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   }
   function drawHive(o) {
     const cx = o.x + 17, cy = GROUND_Y - 63 - o.bob;
-    ctx.fillStyle = C.ink; ctx.fillRect(cx - 1, worldTop - 10, 2, cy - 20 - worldTop + 10);
+    // A thick rope up out of view. It's part of the obstacle, so a hive has to be ducked.
+    const ropeTop = worldTop - 10, ropeBot = cy - 20;
+    ctx.fillStyle = S.rope; ctx.fillRect(cx - 2.5, ropeTop, 5, ropeBot - ropeTop);
+    ctx.fillStyle = S.ropeDark;
+    for (let ry = ropeBot - 6; ry > ropeTop; ry -= 8) ctx.fillRect(cx - 2.5, ry, 5, 2.5);
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.strokeRect(cx - 2.5, ropeTop, 5, ropeBot - ropeTop);
     const rows = [[-20, 12], [-12, 24], [-4, 32], [4, 34], [12, 26]];
     rows.forEach(([dy, w], i) => {
       const x0 = cx - w / 2;

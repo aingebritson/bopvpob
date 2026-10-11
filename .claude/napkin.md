@@ -21,9 +21,13 @@
    Do instead: `resize_window` preset mobile (portrait) and 812x375 (landscape); drive input with dispatched `PointerEvent`s on `#c` (left half = duck, right half = jump); reset to desktop after.
 
 ## Domain Behavior Guardrails
-1. **[2026-10-11] Canvas: `restore()` after `clip()` does not restore the path**
+1. **[2026-10-11] Hives must be ducked; queens may be jumped or ducked**
+   Do instead: keep the hive hitbox top open-ended (`box[3] = 9999`, the drawn rope is part of the obstacle). Don't give queens the same treatment.
+2. **[2026-10-11] Browser pane hidden = requestAnimationFrame paused, game clock frozen**
+   Do instead: for logic tests, use a test-only copy that exposes `window.__dbg = { obstacles, player, step, render }` (insert just before `function resetPlayer()`, after `player` exists) and step `update(STEP)` directly from an in-page script; the javascript tool can't see page globals.
+3. **[2026-10-11] Canvas: `restore()` after `clip()` does not restore the path**
    Do instead: rebuild the shape's path (`beginPath` + shape) before stroking an outline after any clipped fill.
-2. **[2026-10-11] Portrait phones need the closer camera**
+4. **[2026-10-11] Portrait phones need the closer camera**
    Do instead: keep `VIEW_W_PORTRAIT` (480) vs `VIEW_W` (600); if sprites/speeds change, re-check reaction time = (viewRight - PLAYER_X) / speedAt(t).
 
 ## User Directives
@@ -34,7 +38,7 @@
 3. **[2026-10-11] Duck-under obstacles are crowned queen bees; swarm/hive bees wear army helmets**
    Do instead: keep `queen` kind + `drawQueen()` distinct from `drawBee()`.
 4. **[2026-10-11] Copy is minimal and hers: no joke quips on the game-over card, no themed puns in popups**
-   Do instead: keep game-over to "Soaked!", time, New best badge, "Try again"; popups stay short (OOF!/TRIP!/WHOA!/BZZT!/OUCH!). Ask before adding new flavor text.
+   Do instead: keep game-over to "Soaked!", time, New best badge, "Try again"; pause card is just "Paused" + "Keep running"; popups stay short (OOF!/TRIP!/WHOA!/BZZT!/OUCH!). Ask before adding new flavor text.
 5. **[2026-10-11] Obstacles must contrast with the green backdrop**
    Do instead: no green obstacles (bushes became brown dirt piles); check new obstacle colors against hills/trees.
 6. **[2026-10-11] Built for the user's wife, played on a phone**
